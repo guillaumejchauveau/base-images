@@ -1,0 +1,23 @@
+.build_job:
+  stage: build
+  image: registry.gitlab.com/ericvh/docker-buildx-qemu
+  variables:
+    IMAGE_PLATFORM: "linux/amd64"
+  script:
+    - export image="$CI_REGISTRY_IMAGE/$IMAGE_NAME:$IMAGE_VARIANT"
+    # Log into the GitLab Registry and Dependency Proxy.
+    - echo "$CI_REGISTRY_PASSWORD" | docker login -u "$CI_REGISTRY_USER" --password-stdin "$CI_REGISTRY"
+    - echo "$CI_DEPENDENCY_PROXY_PASSWORD" | docker login -u "$CI_DEPENDENCY_PROXY_USER" --password-stdin "$CI_DEPENDENCY_PROXY_SERVER"
+    # Ensure execution of other binary formats is enabled in the kernel.
+    - update-binfmts --enable
+    - docker buildx create --driver docker-container --use
+    # Build and push the image.
+    - |
+      docker buildx build \
+      --platform $IMAGE_PLATFORM \
+      --build-arg VARIANT=$IMAGE_VARIANT \
+      --cache-from "$image" \
+      --tag "$image" \
+      --progress=plain \
+      --push \
+      . 2>&1

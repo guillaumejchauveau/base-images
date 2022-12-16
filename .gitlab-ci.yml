@@ -1,0 +1,15 @@
+include:
+  - local: .gitlab/common.yml
+
+build:
+  extends: .build_job
+  parallel:
+    matrix:
+      - IMAGE_NAME: python-bluez
+        IMAGE_PLATFORM: "linux/amd64,linux/arm64"
+        IMAGE_VARIANT:
+          - 3.10-slim
+  rules:
+    - changes: [ $IMAGE_NAME/**/* ]
+  before_script:
+    - cd $IMAGE_NAME
